@@ -33,7 +33,7 @@ class RAClient:
             log.debug("Get response:" + url + f" -> StatusCode {res.status_code}")
             return {"code": res}
         try:
-            log.debug("Get response: "+url+" -> "+str(res.json()))
+            log.info("Get response: "+url+" -> "+str(res.json()))
             return res.json()
         except:
             log.debug("Get response:" + url + " -> Error Req")
@@ -195,7 +195,7 @@ class RAClient:
         return res
     
     def game_hashes(self, ida, onlyPatch=False):
-        param = {"y": self.api, "i": ida}
+        param = {"y": self.key, "i": ida}
         res = self.__getjson("API_GetGameHashes.php", param)
         
         if onlyPatch:
@@ -203,6 +203,12 @@ class RAClient:
                 if res["Results"][a]["PatchUrl"] == None:
                     del res["Results"][a]
         
+        for k, a in enumerate(res["Results"]):
+            LabelUrls = []
+            for b in a["Labels"]:
+                LabelUrls.append(f"https://static.retroachievements.org/assets/images/labels/{b}.png")
+            res["Results"][k]["LabelUrl"] = LabelUrls
+            
         return res
     
     def check_md5(self, ida, md5):

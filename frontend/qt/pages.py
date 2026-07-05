@@ -282,11 +282,14 @@ class PageGameInfo(QWidget):
         # self.hardcore_dist = rac.game_ach_dist(self.data["ID"], hardcore=True)
         # self.init_ui()
         self.achchart = AchievementChart() # 成就分布图 
+        self.gamehash_list = QListWidget() # gamehash
+        self.list_ach = QListWidget() # Achievements List
         self.rac = rac
         run_async(self, rac.game_info, (gameid, True), self.init_ui)
         run_async(self, rac.game_ach_dist, (gameid, ), self.set_soft)
         run_async(self, rac.game_ach_dist, (gameid, True), self.set_hard)
         run_async(self, rac.game_achievement, (gameid, ), self.update_achievement)
+        run_async(self, rac.game_hashes, (gameid, ), self.update_support)
     
     def init_ui(self, data):
         # Original
@@ -321,7 +324,7 @@ class PageGameInfo(QWidget):
         ach_layout = QVBoxLayout()
         self.status_ach = QLabel("加载中...")
         self.status_mine = QHBoxLayout()
-        self.list_ach = QListWidget()
+        
         # 数据放在下面更新
         ach_layout.addWidget(self.status_ach)
         ach_layout.addLayout(self.status_mine)
@@ -329,10 +332,14 @@ class PageGameInfo(QWidget):
         
         self.list_ach.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
         achievements.setLayout(ach_layout)
+        # 支持的游戏 Hashes ======================
+        gamehash = QWidget()
+        gamehashL = QVBoxLayout()
         
+        gamehashL.addWidget(self.gamehash_list)
+        gamehash.setLayout(gamehashL)
         # Game Info ========================
         gameinfo = QWidget()
-        
         grids = QGridLayout(gameinfo)
         
         # titleArt
@@ -375,12 +382,15 @@ class PageGameInfo(QWidget):
         
         # QTabs ===========================
         tabs = QTabWidget()
-        tabs.setTabPosition(QTabWidget.South)
+        # tabs.setTabPosition(QTabWidget.South)
+        tabs.tabBar().setExpanding(True)
+        tabs.setDocumentMode(True)
         qvbox.addWidget(tabs)
         
         default = tabs.addTab(achievements, "成就")
         tabs.addTab(gameinfo, "游戏信息")
         tabs.addTab(self.achchart, "成就分布图")
+        tabs.addTab(gamehash, "支持的哈希值")
         tabs.setCurrentIndex(default)
         
         qvbox.addWidget(tabs)
@@ -392,6 +402,41 @@ class PageGameInfo(QWidget):
     def set_hard(self, data):
         self.achchart.hardcore_dict=data
         self.achchart.update2()
+    
+    def update_support(self, data):
+        for x in data["Results"]:
+            widget = QWidget()
+            qvbox = QVBoxLayout()
+            item = QListWidgetItem(self.gamehash_list)
+            
+            # Name
+            nameL = QHBoxLayout()
+            name = QLabel(x["Name"])
+            name.setStyleSheet("color: #2367a5; font-size: 18px; font-weight: bold;")
+            nameL.addWidget(name)
+            
+            # LabelUrl
+            for b in x["LabelUrl"]:
+                img = NetImageLabel(self)
+                img.load_from_url(b, 70, 20)
+                nameL.addWidget(img)
+                img.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+            qvbox.addLayout(nameL)
+            
+            # info
+            patch_text = ""
+            if not x['PatchUrl'] is None:
+                patch_text=f"<br>  <a href={x['PatchUrl']}>下载可用补丁</a>"
+            info = QLabel(f"  <i>MD5: {x['MD5']}</i>"+patch_text)
+            info.setOpenExternalLinks(True)
+            info.setCursor(core.Qt.PointingHandCursor)
+            qvbox.addWidget(info)
+            widget.setLayout(qvbox)
+            
+            item.setSizeHint(widget.sizeHint()) 
+            widget.setLayout(qvbox)
+            self.gamehash_list.addItem(item)
+            self.gamehash_list.setItemWidget(item, widget)
     
     def update_achievement(self, data):
         ach_infoText = f"成就数 {data['NumAchievements']} | {data['NumDistinctPlayers']} 人游玩/玩过\n"
