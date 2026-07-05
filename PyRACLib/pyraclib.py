@@ -30,13 +30,13 @@ class RAClient:
         
         res = req.get(self.apibase+url, params=param)
         if res.status_code != 200:
-            log.debug("Get response:" + url + f" -> StatusCode {res.status_code}")
+            log.warning("Get response:" + url + f" -> StatusCode {res.status_code}")
             return {"code": res}
         try:
-            log.info("Get response: "+url+" -> "+str(res.json()))
+            # log.info("Get response: "+url+" -> "+str(res.json()))
             return res.json()
         except:
-            log.debug("Get response:" + url + " -> Error Req")
+            log.warning("Get response:" + url + " -> Error Req")
             return {}
     
     def __saveKey(self):
@@ -241,6 +241,14 @@ class RAClient:
                 return True
         
         return False
+    
+    def game_leaderboard(self, ida):
+        param = {"y": self.key, "i": ida}
+        res = self.__getjson("API_GetGameLeaderboards.php", param)
+        for k, v in enumerate(res["Results"]):
+            res["Results"][k]["TopEntry"]["UserPic"] = self.__u2u(v["TopEntry"]["User"])
+        
+        return res
     
     def game_highscore(self, ida, sort=0, search=None):
         param = {"i": self.key, "y": ida, "t": sort}

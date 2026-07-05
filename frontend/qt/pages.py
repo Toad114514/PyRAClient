@@ -165,7 +165,7 @@ class PageProfile(QWidget):
         # 最近游玩游戏 =================================
         recent_game = QGroupBox("近期游玩游戏")
         recent_game.setObjectName("recentgame")
-        recent_game.setStyleSheet("QGroupBox#recentgame{ background-color: #bcbcbc; border-radius: 5px; margin-top: 21px;}")
+        # recent_game.setStyleSheet("QGroupBox#recentgame{ background-color: #bcbcbc; border-radius: 5px; margin-top: 21px;}") 卖掉了。
         rglayout = QVBoxLayout()
         recent_game.setFixedHeight(300)
         
@@ -284,17 +284,20 @@ class PageGameInfo(QWidget):
         self.achchart = AchievementChart() # 成就分布图 
         self.gamehash_list = QListWidget() # gamehash
         self.list_ach = QListWidget() # Achievements List
+        self.leaderb_list = QListWidget() # game_leaderboard
+        self.status_ach = QLabel("加载中...")
+        self.status_mine = QHBoxLayout()
         self.rac = rac
         run_async(self, rac.game_info, (gameid, True), self.init_ui)
         run_async(self, rac.game_ach_dist, (gameid, ), self.set_soft)
         run_async(self, rac.game_ach_dist, (gameid, True), self.set_hard)
         run_async(self, rac.game_achievement, (gameid, ), self.update_achievement)
         run_async(self, rac.game_hashes, (gameid, ), self.update_support)
+        run_async(self, rac.game_leaderboard, (gameid, ), self.update_leaderb)
     
     def init_ui(self, data):
         # Original
         self.data = data
-        self.ach = self.data["Achievements"]
         qvbox = QVBoxLayout(self)
         qvbox.setSpacing(10)
         
@@ -322,8 +325,6 @@ class PageGameInfo(QWidget):
         
         achievements = QWidget()
         ach_layout = QVBoxLayout()
-        self.status_ach = QLabel("加载中...")
-        self.status_mine = QHBoxLayout()
         
         # 数据放在下面更新
         ach_layout.addWidget(self.status_ach)
@@ -338,6 +339,12 @@ class PageGameInfo(QWidget):
         
         gamehashL.addWidget(self.gamehash_list)
         gamehash.setLayout(gamehashL)
+        # Leaderboard =======================================
+        leaderbw = QWidget()
+        leaderbwL = QVBoxLayout()
+        
+        leaderbwL.addWidget(self.leaderb_list)
+        leaderbw.setLayout(leaderbwL)
         # Game Info ========================
         gameinfo = QWidget()
         grids = QGridLayout(gameinfo)
@@ -390,6 +397,7 @@ class PageGameInfo(QWidget):
         default = tabs.addTab(achievements, "成就")
         tabs.addTab(gameinfo, "游戏信息")
         tabs.addTab(self.achchart, "成就分布图")
+        tabs.addTab(leaderbw, "记分板")
         tabs.addTab(gamehash, "支持的哈希值")
         tabs.setCurrentIndex(default)
         
@@ -402,6 +410,43 @@ class PageGameInfo(QWidget):
     def set_hard(self, data):
         self.achchart.hardcore_dict=data
         self.achchart.update2()
+    
+    def update_leaderb(self, data):
+        for x in data["Results"]:
+            widget = QWidget()
+            qvbox = QVBoxLayout()
+            item = QListWidgetItem(self.leaderb_list)
+            
+            # Title
+            title = QLabel(x["Title"])
+            title.setStyleSheet("color: #2367a5; font-size: 17px; font-weight: bold;")
+            qvbox.addWidget(title)
+            # Description 
+            desc = QLabel(x["Description"])
+            desc.setStyleSheet("font-size: 15px; font-style: italic;")
+            qvbox.addWidget(desc)
+            # theBest
+            thebest = QHBoxLayout()
+            thebest.addWidget(QLabel("最高分: "))
+            
+            tb_ico = NetImageLabel(self)
+            tb_ico.load_from_url(x["TopEntry"]["UserPic"], 30, 30)
+            thebest.addWidget(tb_ico)
+            
+            tb_name = QLabel(x["TopEntry"]["User"])
+            tb_name.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+            thebest.addWidget(tb_name)
+            
+            tb_score = QLabel(x["TopEntry"]["FormattedScore"])
+            tb_score.setStyleSheet("color: gold; font-weight: bold;")
+            thebest.addWidget(tb_score)
+            
+            qvbox.addLayout(thebest)
+            
+            widget.setLayout(qvbox)
+            item.setSizeHint(widget.sizeHint())
+            self.leaderb_list.addItem(item)
+            self.leaderb_list.setItemWidget(item, widget)
     
     def update_support(self, data):
         for x in data["Results"]:
