@@ -12,7 +12,8 @@ class Save:
        self.full = self.path + "/../config.json"
        
        if os.path.exists(self.full) == False:
-           os.system(f"touch '{self.full}'")
+           with open(self.full, "w") as f:
+               f.write("{}")
     
     def write(self, d):
         log.info(f"[Save]: Write {d} -> {self.full}")
