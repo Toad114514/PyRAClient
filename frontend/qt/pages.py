@@ -287,6 +287,15 @@ class PageGameInfo(QWidget):
         self.leaderb_list = QListWidget() # game_leaderboard
         self.status_ach = QLabel("加载中...")
         self.status_mine = QHBoxLayout()
+        
+        # 无焦点。。
+        self.gamehash_list.setSelectionMode(QAbstractItemView.NoSelection)
+        self.list_ach.setSelectionMode(QAbstractItemView.NoSelection)
+        self.leaderb_list.setSelectionMode(QAbstractItemView.NoSelection)
+        self.gamehash_list.setFocusPolicy(core.Qt.NoFocus)
+        self.list_ach.setFocusPolicy(core.Qt.NoFocus)
+        self.leaderb_list.setFocusPolicy(core.Qt.NoFocus)
+        
         self.rac = rac
         run_async(self, rac.game_info, (gameid, True), self.init_ui)
         run_async(self, rac.game_ach_dist, (gameid, ), self.set_soft)
@@ -438,7 +447,7 @@ class PageGameInfo(QWidget):
             thebest.addWidget(tb_name)
             
             tb_score = QLabel(x["TopEntry"]["FormattedScore"])
-            tb_score.setStyleSheet("color: gold; font-weight: bold;")
+            tb_score.setStyleSheet("color: #b78b26; font-weight: bold; font-size: 15px;")
             thebest.addWidget(tb_score)
             
             qvbox.addLayout(thebest)
